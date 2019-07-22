@@ -5,55 +5,93 @@ const readlineSync = require("readline-sync");
 const ProgressBar = require("progress");
 const chalk = require("chalk");
 let argv = require("yargs")
-	.option("killed", {
-		alias: "k",
+	.usage("Usage: $0 [options]")
+	.usage("Usage: $0 <directory> [options]")
+	.usage("\nFolder structure should be <directory>/tournament_name/setup_num/game.slp")
+	.option("k", {
+		alias: "killed",
 		describe: "Combos that killed the opponent",
 		default: true,
 		type: "boolean",
 	})
-	.option("percent", {
-		alias: "p",
+	.option("p", {
+		alias: "percent",
 		describe: "Minimum amount of damage given",
 		type: "number",
 	})
-	.option("moves", {
-		alias: "m",
+	.option("m", {
+		alias: "moves",
 		describe: "Minimum number of moves used",
 		type: "number",
 	})
-	.option("tag", {
-		alias: "t",
+	.option("t", {
+		alias: "tag",
 		describe: "Filter by nametag",
 		type: "string",
 	})
-	.version(false)
-	.help()
+	.option("s", {
+		alias: "shuffle",
+		describe: "Shuffle the order of the final JSON to avoid using the same match twice in a row (if possible)",
+		default: false,
+		type: "boolean",
+	})
+	.alias("v", "version")
+	.version()
+	.alias("h", "help")
 	.argv;
 
-console.log(argv.killed);
-console.log(argv.percent);
-console.log(argv.moves);
-console.log(argv.tag);
+console.log("Filtering with the following conditions:")
+if (argv.killed) {
+	console.log(`- The combo ${chalk.bold.red("killed")} the opponent`);
+}
+if (argv.percent) {
+	console.log(`- The combo did at least ${chalk.bold.red(argv.percent + "%")} damage`);
+}
+if (argv.moves) {
+	console.log(`- The combo contained at least ${chalk.bold.red(argv.moves)} moves`)
+}
+if (argv.tag) {
+	console.log(`- The combo was performed by a player with the tag "${chalk.bold.red(argv.tag)}"`)
+}
+// TODO: Wobbling
 
 
-let characterName = function(character) {
-	return characters.getCharacterColorName(character.characterId, character.characterColor) + " " + characters.getCharacterShortName(character.characterId);
+let characterName = function(player) {
+	let tag = player.nametag;
+	let color = characters.getCharacterColorName(player.characterId, player.characterColor);
+	let character = characters.getCharacterShortName(player.characterId);
+	if (tag) {
+		return `${tag} - ${character}`;
+	}
+	else {
+		return `${color} ${character}`;
+	}
 }
 
 let slippi_files = [];
 
+let dirname = path.join(process.cwd(), argv._[0] ? argv._[0] : "./");
 process.stderr.write(chalk.bold("Scanning files..."));
-let folders = fs.readdirSync(path.join(__dirname, "recordings"));
+let folders = fs.readdirSync(dirname, {withFileTypes: true});
 for (let tournament of folders) {
-	let stations = fs.readdirSync(path.join(__dirname, "recordings", tournament));
+	if (!tournament.isDirectory()) {
+		continue;
+	}
+	let stations = fs.readdirSync(path.join(dirname, tournament.name), {withFileTypes: true});
 	for (let station of stations) {
-		let games = fs.readdirSync(path.join(__dirname, "recordings", tournament, station));
+		if (!station.isDirectory()) {
+			continue;
+		}
+		let games = fs.readdirSync(path.join(dirname, tournament.name, station.name), {withFileTypes: true});
 		for (let game of games) {
-			let game_path = path.join(__dirname, "recordings", tournament, station, game);
+			if (!game.isFile() || !game.name.endsWith(".slp")) {
+				continue;
+			}
+			let game_path = path.join(dirname, tournament.name, station.name, game.name);
 			let slippi = new SlippiGame(game_path);
-			let containsEli = slippi.getSettings().players.some(player => player.nametag === "ELI");
+			let containsTag = !argv.tag || slippi.getSettings().players.some(player => player.nametag === argv.tag);
 			let numPlayers = slippi.getSettings().players.length;
-			if (containsEli && numPlayers === 2) {
+			if (containsTag && numPlayers === 2) {
 				slippi_files.push(slippi);
 			}
 		}
@@ -63,7 +101,7 @@ for (let tournament of folders) {
 process.stderr.clearLine();
 process.stderr.cursorTo(0);
 
-console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.blue(slippi_files.length)} games from ${chalk.bold.blue(folders.length)} tournaments.`);
+console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.red(slippi_files.length)} games from ${chalk.bold.red(folders.length)} tournaments.`);
 let bar = new ProgressBar(`${chalk.bold("Detecting combos...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`, {total: slippi_files.length, width: 20, clear: true});
 
 let finaljson = {
@@ -74,58 +112,59 @@ let finaljson = {
 };
 for (let i = 0; i < slippi_files.length; i++) {
 	let slippi = slippi_files[i];
-	let eliPlayerIndex = slippi.getSettings().players.find(player => player.nametag === "ELI").playerIndex;
 	let combos = slippi.getStats().combos;
 	for (let combo of combos) {
-		if (combo.playerIndex === eliPlayerIndex && combo.moves.length >= 4 && (combo.endPercent - combo.startPercent) >= 30) {
-			let filepath = "C:\\Users\\Eli\\Downloads\\Slippi\\" + path.relative("", slippi.input.filePath).split("/").join("\\");
-			let obj = {
+		let matchesKilled = !argv.killed || combo.didKill;
+		let matchesPercent = !argv.percent || (combo.endPercent - combo.startPercent) >= argv.percent;
+		let matchesMoves = !argv.moves || combo.moves.length >= argv.moves;
+		let matchesTag = !argv.tag || combo.playerIndex === slippi.getSettings().players.find(player => player.nametag === argv.tag).playerIndex;
+		if (matchesKilled && matchesPercent && matchesMoves && matchesTag) {
+			let filepath = slippi.input.filePath;
+			// let filepath = "C:\\Users\\Eli\\Downloads\\Slippi\\" + path.relative("", slippi.input.filePath).split("/").join("\\");
+			finaljson["queue"].push({
 				"path": filepath,
 				"startFrame": Math.max(combo.startFrame - 150, 0),
 				"endFrame": combo.endFrame + 150,
-				"length": combo.moves.length,
+				"moves": combo.moves.length,
 				"percent": combo.endPercent - combo.startPercent,
 				"stage": stages.getStageName(slippi.getSettings().stageId),
-				"eli": characterName(slippi.getSettings().players.find(player => player.nametag === "ELI")),
-				"opponent": characterName(slippi.getSettings().players.find(player => player.nametag !== "ELI")),
-			};
-			finaljson["queue"].push(obj);
+				"didKill": combo.didKill,
+				"comboer": characterName(slippi.getSettings().players.find(player => player.playerIndex === combo.playerIndex)),
+				"opponent": characterName(slippi.getSettings().players.find(player => player.playerIndex === combo.opponentIndex)),
+			});
 		}
 	}
 	bar.tick();
 }
-console.log(`${chalk.bold("Detected combos.")} Found ${chalk.bold.blue(finaljson["queue"].length)} combos.`);
+console.log(`${chalk.bold("Detected combos.")} Found ${chalk.bold.red(finaljson["queue"].length)} combos.`);
 
-shuffle = function(arr) {
-	// Fisher-Yates shuffle
-	for (let i = (arr.length - 1); i > 0; i -= 1) {
-		let randomIndex = Math.floor(Math.random() * (i + 1));
-		let temp = arr[randomIndex];
-		arr[randomIndex] = arr[i];
-		arr[i] = temp;
-	}
-}
-adjacentPath = function(arr) {
-	for (let i = 0; i < arr.length - 1; i++) {
-		let game1 = arr[i];
-		let game2 = arr[i+1];
-		if (game1["path"] === game2["path"] || (game1["stage"] === game2["stage"] && game1["eli"] === game2["eli"] && game1["opponent"] === game2["opponent"])) {
-			return true;
+if (argv.shuffle) {
+	let shuffle = function(arr) {
+		// Fisher-Yates shuffle
+		for (let i = (arr.length - 1); i > 0; i -= 1) {
+			let randomIndex = Math.floor(Math.random() * (i + 1));
+			let temp = arr[randomIndex];
+			arr[randomIndex] = arr[i];
+			arr[i] = temp;
 		}
 	}
-	return false;
-}
-while (adjacentPath(finaljson["queue"])) {
-	shuffle(finaljson["queue"]);
+	let adjacentPath = function(arr) {
+		for (let i = 0; i < arr.length - 1; i++) {
+			let game1 = arr[i];
+			let game2 = arr[i+1];
+			// if (game1["path"] === game2["path"] || (game1["stage"] === game2["stage"] && game1["comboer"] === game2["comboer"] && game1["opponent"] === game2["opponent"])) {
+			if (game1["path"] === game2["path"]) {
+				return true;
+			}
+		}
+		return false;
+	}
+	let start = Date.now();
+	// Only run for 2 seconds
+	while (adjacentPath(finaljson["queue"]) && (Date.now() - start) < 2000) {
+		shuffle(finaljson["queue"]);
+	}
 }
 
-replacer = function(key, value) {
-	// Filtering out properties
-	if (["length", "percent", "stage", "eli", "opponent"].includes(key)) {
-		return undefined;
-	}
-	return value;
-}
-fs.writeFileSync("combos.json", JSON.stringify(finaljson, replacer));
-fs.writeFileSync("readablecombos.json", JSON.stringify(finaljson["queue"], null, "\t"));
-console.log(`All combos saved!`);
+fs.writeFileSync("combos.json", JSON.stringify(finaljson, null, "\t"));
+console.log(chalk.bold("Combos saved to combos.json!"));
