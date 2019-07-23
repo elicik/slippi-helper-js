@@ -7,11 +7,10 @@
     "yargs": "^13.3.0"
   },
   "name": "slippi-helper-js",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A helper CLI for slp-parser-js to simplify making combo videos",
   "main": "index.js",
   "repository": "https://github.com/elicik/slippi-helper-js.git",
   "author": "Eli Gukovsky <gukovskye@gmail.com>",
-  "license": "MIT",
-  "private": true
+  "license": "MIT"
 }

@@ -5,9 +5,9 @@ You can find the latest release [here](https://github.com/elicik/slippi-helper-j
 
 ## Usage:
 ```
-> .\slippi-helper-js-0.1.0-win.exe -h
-Usage: slippi-helper-js-0.1.0-win.exe [options]
-Usage: slippi-helper-js-0.1.0-win.exe <directory> [options]
+> .\slippi-helper-js-0.2.0-win.exe -h
+Usage: slippi-helper-js-0.2.0-win.exe [options]
+Usage: slippi-helper-js-0.2.0-win.exe <directory> [options]
 
 Folder structure should be <directory>/tournament_name/setup_num/game.slp
 
@@ -25,7 +25,7 @@ Options:
 ```
 Example:
 ```
-> .\slippi-helper-js-0.1.0-win.exe recordings\ -k=false -p=40 -m=4 -t=ELI -s
+> .\slippi-helper-js-0.2.0-win.exe recordings\ -k=false -p=40 -m=4 -t=ELI -s
 Filtering with the following conditions:
 - The combo did at least 40% damage
 - The combo contained at least 4 moves
