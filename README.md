@@ -25,7 +25,7 @@ Options:
 ```
 Example:
 ```
-> .\slippi-helper-js-0.2.0-win.exe recordings\ -k=false -p=40 -m=4 -t=ELI -s
+> .\slippi-helper-js-0.2.0-win.exe recordings -k=false -p=40 -m=4 -t=ELI -s
 Filtering with the following conditions:
 - The combo did at least 40% damage
 - The combo contained at least 4 moves
