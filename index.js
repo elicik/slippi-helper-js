@@ -76,13 +76,8 @@ let characterName = function(player) {
 }
 
 let slippi_files = [];
-let dirname;
-if (argv._[0]) {
-	dirname = path.join(process.cwd(), argv._[0]);
-}
-else {
-	dirname = process.cwd();
-}
+let dirname = argv._[0] || process.cwd();
+
 process.stderr.write(chalk.bold("Scanning files..."));
 let folders = fs.readdirSync(dirname, {withFileTypes: true});
 for (let tournament of folders) {
