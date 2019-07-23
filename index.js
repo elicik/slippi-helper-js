@@ -1,7 +1,6 @@
 const { default: SlippiGame, characters, stages, moves } = require("slp-parser-js");
 const fs = require("fs");
 const path = require("path");
-const readlineSync = require("readline-sync");
 const ProgressBar = require("progress");
 const chalk = require("chalk");
 let argv = require("yargs")
