@@ -39,5 +39,5 @@ Combos saved to combos.json!
 slippi-helper-js will output a ```combos.json``` file that contains all the information that you can use to connect to
 the Slippi version of Dolphin, which is then recorded with something like OBS.
 
-To run Dolphin with these combos, move the combos.js to the directory with Dolphin, and then run
+To run Dolphin with these combos, move combos.json to the directory with Dolphin, and then run
 ```Dolphin.exe -i combos.json -e "C:/path/to/melee.iso"```
