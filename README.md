@@ -1,7 +1,9 @@
 # slippi-helper-js
 A helper tool to take .slp files (Slippi replays) and help turn them into combo videos.
 
-You can find the latest release [here](https://github.com/elicik/slippi-helper-js/releases).
+You can download the latest release [here](https://github.com/elicik/slippi-helper-js/releases).
+
+However, if you would like to contribute or just run the script using your own copy of node.js, you can clone the repository, run ```yarn``` or ```npm install``` to install all the dependencies, and then run with ```node ./index.js```.
 
 ## Usage:
 ```
