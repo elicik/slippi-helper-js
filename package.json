@@ -15,7 +15,7 @@
   "main": "index.js",
   "bin": "index.js",
   "repository": "https://github.com/elicik/slippi-helper-js.git",
-  "author": "Eli Gukovsky <gukovskye@gmail.com>",
+  "author": "Eli Gukovsky <gukovskye@gmail.com> (https://www.gukovsky.com/)",
   "license": "MIT",
   "devDependencies": {
     "pkg": "^4.4.0"
