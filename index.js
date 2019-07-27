@@ -138,7 +138,7 @@ for (let i = 0; i < slippi_files.length; i++) {
 		let matchesPercent = !argv.percent || (combo.endPercent - combo.startPercent) >= argv.percent;
 		let matchesMoves = !argv.moves || combo.moves.length >= argv.moves;
 		let matchesTag = !argv.tag || comboer.nametag === argv.tag;
-		let numPummels = combo.moves.filter(m => moves.getMoveShortName(m) === "pummel").length;
+		let numPummels = combo.moves.filter(move => moves.getMoveShortName(move.moveId) === "pummel").length;
 		let wobble = characters.getCharacterShortName(comboer.characterId) === "ICs" && numPummels >= 6;
 		if (matchesKilled && matchesPercent && matchesMoves && matchesTag && (!wobble || argv.wobbling)) {
 			finaljson["queue"].push({
