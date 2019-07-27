@@ -77,15 +77,23 @@ let characterName = function(player) {
 let slippi_files = [];
 let dirname = argv._[0] || process.cwd();
 
-process.stderr.write(chalk.bold("Scanning files..."));
 let folders = fs.readdirSync(dirname, {withFileTypes: true});
+let bar = new ProgressBar(`${chalk.bold("Scanning files...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
+	{
+		total: folders.length,
+		width: 20,
+		clear: true
+	}
+);
 for (let tournament of folders) {
 	if (!tournament.isDirectory()) {
+		bar.tick();
 		continue;
 	}
 	let stations = fs.readdirSync(path.join(dirname, tournament.name), {withFileTypes: true});
 	for (let station of stations) {
 		if (!station.isDirectory()) {
+			bar.tick(1 / stations.length);
 			continue;
 		}
 		let games = fs.readdirSync(path.join(dirname, tournament.name, station.name), {withFileTypes: true});
@@ -101,14 +109,12 @@ for (let tournament of folders) {
 				slippi_files.push(slippi);
 			}
 		}
+		bar.tick(1 / stations.length);
 	}
 }
 
-process.stderr.clearLine();
-process.stderr.cursorTo(0);
-
 console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.red(slippi_files.length)} games from ${chalk.bold.red(folders.length)} tournaments.`);
-let bar = new ProgressBar(`${chalk.bold("Detecting combos...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
+bar = new ProgressBar(`${chalk.bold("Detecting combos...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
 	{
 		total: slippi_files.length,
 		width: 20,
