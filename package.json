@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pkg . --out-path=build/"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A helper CLI for slp-parser-js to simplify making combo videos",
   "main": "index.js",
   "bin": "index.js",
