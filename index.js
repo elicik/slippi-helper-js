@@ -141,9 +141,8 @@ for (let i = 0; i < slippi_files.length; i++) {
 		let numPummels = combo.moves.filter(m => moves.getMoveShortName(m) === "pummel").length;
 		let wobble = characters.getCharacterShortName(comboer.characterId) === "ICs" && numPummels >= 6;
 		if (matchesKilled && matchesPercent && matchesMoves && matchesTag && (!wobble || argv.wobbling)) {
-			let filepath = slippi.input.filePath;
 			finaljson["queue"].push({
-				"path": filepath,
+				"path": path.resolve(slippi.input.filePath),
 				"startFrame": Math.max(combo.startFrame - 150, 0),
 				"endFrame": combo.endFrame + 150,
 				"moves": combo.moves.length,
