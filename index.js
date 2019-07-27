@@ -74,26 +74,18 @@ let characterName = function(player) {
 	}
 }
 
-let slippi_files = [];
 let dirname = argv._[0] || process.cwd();
 
+process.stderr.write(chalk.bold("Scanning files..."));
 let folders = fs.readdirSync(dirname, {withFileTypes: true});
-let bar = new ProgressBar(`${chalk.bold("Scanning files...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
-	{
-		total: folders.length,
-		width: 20,
-		clear: true
-	}
-);
+let game_paths = [];
 for (let tournament of folders) {
 	if (!tournament.isDirectory()) {
-		bar.tick();
 		continue;
 	}
 	let stations = fs.readdirSync(path.join(dirname, tournament.name), {withFileTypes: true});
 	for (let station of stations) {
 		if (!station.isDirectory()) {
-			bar.tick(1 / stations.length);
 			continue;
 		}
 		let games = fs.readdirSync(path.join(dirname, tournament.name, station.name), {withFileTypes: true});
@@ -102,25 +94,34 @@ for (let tournament of folders) {
 				continue;
 			}
 			let game_path = path.join(dirname, tournament.name, station.name, game.name);
-			let slippi = new SlippiGame(game_path);
-			let containsTag = !argv.tag || slippi.getSettings().players.some(player => player.nametag === argv.tag);
-			let numPlayers = slippi.getSettings().players.length;
-			if (containsTag && numPlayers === 2) {
-				slippi_files.push(slippi);
-			}
+			game_paths.push(game_path);
 		}
-		bar.tick(1 / stations.length);
 	}
 }
+process.stderr.clearLine();
+process.stderr.cursorTo(0);
+console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.red(game_paths.length)} games from ${chalk.bold.red(folders.length)} tournaments.`);
 
-console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.red(slippi_files.length)} games from ${chalk.bold.red(folders.length)} tournaments.`);
-bar = new ProgressBar(`${chalk.bold("Detecting combos...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
+let bar = new ProgressBar(`${chalk.bold("Filtering files...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
 	{
-		total: slippi_files.length,
+		total: game_paths.length,
 		width: 20,
 		clear: true
 	}
 );
+
+let slippi_files = [];
+for (let game_path of game_paths) {
+	let slippi = new SlippiGame(game_path);
+	let containsTag = !argv.tag || slippi.getSettings().players.some(player => player.nametag === argv.tag);
+	let numPlayers = slippi.getSettings().players.length;
+	if (containsTag && numPlayers === 2) {
+		slippi_files.push(slippi);
+	}
+	bar.tick()
+}
+console.log(`${chalk.bold("Filtered files")}. Found ${chalk.bold.red(slippi_files.length)} eligible games out of ${chalk.bold.red(game_paths.length)}.`);
+
 
 let finaljson = {
 	"mode": "queue",
@@ -128,6 +129,14 @@ let finaljson = {
 	"isRealTimeMode": false,
 	"queue": [],
 };
+
+bar = new ProgressBar(`${chalk.bold("Filtering combos...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
+	{
+		total: slippi_files.length,
+		width: 20,
+		clear: true
+	}
+);
 for (let i = 0; i < slippi_files.length; i++) {
 	let slippi = slippi_files[i];
 	let combos = slippi.getStats().combos;
@@ -156,7 +165,7 @@ for (let i = 0; i < slippi_files.length; i++) {
 	}
 	bar.tick();
 }
-console.log(`${chalk.bold("Detected combos.")} Found ${chalk.bold.red(finaljson["queue"].length)} combos.`);
+console.log(`${chalk.bold("Filtered combos.")} Found ${chalk.bold.red(finaljson["queue"].length)} eligible combos from ${chalk.bold.red(slippi_files.length)} games.`);
 
 if (argv.shuffle) {
 	let shuffle = function(arr) {
