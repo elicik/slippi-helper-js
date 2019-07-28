@@ -1,7 +1,7 @@
 # slippi-helper-js
 A helper tool to take .slp files (Slippi replays) and help turn them into combo videos.
 
-You can download the latest release [here](https://github.com/elicik/slippi-helper-js/releases).
+You can download the latest release [here](https://github.com/elicik/slippi-helper-js/releases/latest).
 
 However, if you would like to contribute or just run the script using your own copy of node.js, you can clone the repository, run ```yarn``` or ```npm install``` to install all the dependencies, and then run with ```node ./index.js```.
 
@@ -18,16 +18,16 @@ Options:
   -p, --percent   Minimum amount of damage given                        [number]
   -m, --moves     Minimum number of moves used                          [number]
   -t, --tag       Filter by nametag                                     [string]
-  -w, --wobbling  Include combos with 6 or more Ice Climbers pummels
-                                                      [boolean] [default: false]
-  -s, --shuffle   Shuffle the order of the final JSON to avoid using the same
-                  match twice in a row (if possible)  [boolean] [default: false]
+  -w, --wobbling  Include wobbling combos             [boolean] [default: false]
+  -s, --shuffle   Avoid outputting adjacent matchs, if possible.
+                  If disabled, combos may potentially get skipped.
+                                                       [boolean] [default: true]
   -v, --version   Show version number                                  [boolean]
   -h, --help      Show help                                            [boolean]
 ```
 Example:
 ```
-> .\slippi-helper-js-win.exe recordings -k=false -p=40 -m=4 -t=ELI -s
+> .\slippi-helper-js-win.exe recordings -k=false -p=40 -m=4 -t=ELI
 Filtering with the following conditions:
 - The combo did at least 40% damage
 - The combo contained at least 4 moves

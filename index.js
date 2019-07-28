@@ -30,15 +30,15 @@ let argv = require("yargs")
 	})
 	.option("w", {
 		alias: "wobbling",
-		describe: "Include combos with 6 or more Ice Climbers pummels",
+		describe: "Include wobbling combos",
 		type: "boolean",
 		default: false,
 	})
 	.option("s", {
 		alias: "shuffle",
-		describe: "Shuffle the order of the final JSON to avoid using the same match twice in a row (if possible)",
+		describe: "Avoid outputting adjacent matchs, if possible.\nIf disabled, combos may potentially get skipped.",
 		type: "boolean",
-		default: false,
+		default: true,
 	})
 	.alias("v", "version")
 	.version()
@@ -101,6 +101,8 @@ for (let tournament of folders) {
 process.stderr.clearLine();
 process.stderr.cursorTo(0);
 console.log(`${chalk.bold("Scanned files")}. Found ${chalk.bold.red(game_paths.length)} games from ${chalk.bold.red(folders.length)} tournaments.`);
+// Set to null to allow GC to free memory
+folders = null;
 
 let bar = new ProgressBar(`${chalk.bold("Filtering files...")} ${chalk.green("[:bar]")} :percent (:etas remaining)`,
 	{
@@ -121,6 +123,8 @@ for (let game_path of game_paths) {
 	bar.tick()
 }
 console.log(`${chalk.bold("Filtered files")}. Found ${chalk.bold.red(slippi_files.length)} eligible games out of ${chalk.bold.red(game_paths.length)}.`);
+// Set to null to allow GC to free memory
+game_paths = null;
 
 
 let finaljson = {
@@ -164,35 +168,55 @@ for (let i = 0; i < slippi_files.length; i++) {
 		}
 	}
 	bar.tick();
+	// Set to null to allow GC to free memory
+	slippi_files[i] = null;
 }
 console.log(`${chalk.bold("Filtered combos.")} Found ${chalk.bold.red(finaljson["queue"].length)} eligible combos from ${chalk.bold.red(slippi_files.length)} games.`);
+// Set to null to allow GC to free memory
+slippi_files = null;
 
 if (argv.shuffle) {
-	let shuffle = function(arr) {
-		// Fisher-Yates shuffle
-		for (let i = (arr.length - 1); i > 0; i -= 1) {
-			let randomIndex = Math.floor(Math.random() * (i + 1));
-			let temp = arr[randomIndex];
-			arr[randomIndex] = arr[i];
-			arr[i] = temp;
-		}
-	}
+	console.log(chalk.bold("Shuffling combos..."));
+	// Unsure if this algorithm is actually optimal, but it's better than nothing
 	let adjacentPath = function(arr) {
 		for (let i = 0; i < arr.length - 1; i++) {
 			let game1 = arr[i];
 			let game2 = arr[i+1];
 			if (game1["path"] === game2["path"]) {
-				return true;
+				return i;
 			}
 		}
-		return false;
+		return -1;
 	}
-	let start = Date.now();
-	// Only run for 2 seconds
-	while (adjacentPath(finaljson["queue"]) && (Date.now() - start) < 2000) {
-		shuffle(finaljson["queue"]);
+	// Get all adjacent combos and add them to a stack
+	let stack = [];
+	let index = adjacentPath(finaljson["queue"]);
+	while (index !== -1) {
+		stack.push(finaljson["queue"].splice(index, 1)[0]);
+		index = adjacentPath(finaljson["queue"]);
+	}
+	// For each combo, try to put it in a place it fits
+	for (let combo of stack) {
+		let possible = false;
+		for (let i = 0; i < finaljson["queue"].length; i++) {
+			let left = finaljson["queue"][Math.max(i-1, 0)];
+			let right = finaljson["queue"][i];
+			if (combo["path"] !== left["path"] && combo["path"] !== right["path"]) {
+				finaljson["queue"].splice(i, 0, combo);
+				possible = true;
+				break;
+			}
+		}
+		if (!possible) {
+			// Just add to the end if impossible
+			finaljson["queue"].push(combo);
+		}
+	}
+	console.log(chalk.bold("Shuffled combos."));
+	if (adjacentPath(finaljson["queue"]) !== -1) {
+		console.log(`${chalk.bgRed("WARNING")} There are still adjacent combos with the same path. Dolphin playback may skip some combos.`);
 	}
 }
 
 fs.writeFileSync("combos.json", JSON.stringify(finaljson, null, "\t"));
-console.log(`Combos saved to ${chalk.bold("combos.json")}`);
+console.log(`Combos saved to ${chalk.bold("combos.json")}.`);
