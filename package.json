@@ -7,9 +7,9 @@
   },
   "name": "slippi-helper-js",
   "scripts": {
-    "build": "pkg . --out-path=build/ --targets=node10-linux,node10-win,node10-mac"
+    "build": "pkg . --out-path=build/ --no-bytecode --public"
   },
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A helper CLI for slp-parser-js to simplify making combo videos",
   "main": "index.js",
   "bin": "index.js",
