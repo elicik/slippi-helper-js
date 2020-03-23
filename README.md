@@ -1,4 +1,9 @@
+# Deprecated
+This helper was created before the existance of [Project Clippi](https://github.com/vinceau/project-clippi), which does the same things that this project does but better. Please use that instead.
+
+
 # slippi-helper-js
+
 A helper tool to take .slp files (Slippi replays) and help turn them into combo videos.
 
 You can download the latest release [here](https://github.com/elicik/slippi-helper-js/releases/latest).
